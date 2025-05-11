@@ -150,11 +150,11 @@ def generate_commit_message(diff: str) -> str:
         click.secho(error_msg, fg="red")
         return "chore: update project files"
 
-def run_commands(commands: list[str]):
+def run_commands(commands: list[str], pre_generated_message=None):
     for cmd in commands:
         if cmd == "__auto_commit__":
             logger.info("Executing auto-commit workflow")
-            perform_auto_commit()
+            perform_auto_commit(pre_generated_message)
             continue
 
         click.secho(f"Running: {cmd}", fg="green")
@@ -168,7 +168,7 @@ def run_commands(commands: list[str]):
             logger.error(error_msg)
             click.secho(error_msg, fg="red")
 
-def perform_auto_commit():
+def perform_auto_commit(pre_generated_message=None):
     logger.info("Starting auto-commit process")
     try:
         # Stage all changes
@@ -183,9 +183,14 @@ def perform_auto_commit():
             click.secho(msg, fg="yellow")
             return
 
-        # Generate a meaningful commit message
-        message = generate_commit_message(diff)
-        click.echo(f"Generated commit message: {message}")
+        # Use pre-generated message or generate a new one
+        if pre_generated_message:
+            message = pre_generated_message
+            logger.info(f"Using pre-generated commit message: '{message}'")
+        else:
+            # Generate a meaningful commit message
+            message = generate_commit_message(diff)
+            click.echo(f"Generated commit message: {message}")
 
         # Perform the commit
         logger.info(f"Committing changes with message: '{message}'")
@@ -226,6 +231,7 @@ def main(nl_command, verbose):
         return
 
     # Pre-generate commit message for better user feedback if auto-commit is in the commands
+    pre_generated_message = None
     if "__auto_commit__" in commands:
         logger.info("Auto-commit detected, pre-generating commit message for user preview")
         # Stage files first to get the diff
@@ -233,8 +239,8 @@ def main(nl_command, verbose):
             subprocess.run(["git", "add", "."], check=True, capture_output=True, text=True)
             diff = get_git_diff_summary()
             if diff and diff != "Files changed:\n\nDetails:\n":
-                message = generate_commit_message(diff)
-                click.secho(f"Will commit with message: '{message}'", fg="blue")
+                pre_generated_message = generate_commit_message(diff)
+                click.secho(f"Will commit with message: '{pre_generated_message}'", fg="blue")
             else:
                 click.secho("No changes detected to commit.", fg="yellow")
         except Exception as e:
@@ -242,7 +248,7 @@ def main(nl_command, verbose):
 
     if click.confirm(f"Run these command(s)? {commands}", default=True):
         logger.info(f"User confirmed execution of commands: {commands}")
-        run_commands(commands)
+        run_commands(commands, pre_generated_message)
     else:
         logger.info("User aborted command execution")
         click.echo("Aborted.")
