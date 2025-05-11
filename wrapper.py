@@ -64,6 +64,10 @@ Only return a single-line message in this format:
 
 Use one of: feat, fix, chore, docs, refactor, test, perf, ci, build, style.
 
+Avoid mentioning a module name unless it's directly relevant to the change.
+
+Each message should clearly and concisely convey the change made.
+
 Example:
 Changes:
 - Modified login form to add password strength meter
@@ -74,15 +78,18 @@ Now write the commit message based on this diff:
 Commit:
 """
 
+model = "gpt-4o-mini"
+
 def ask_llm(nl_text: str) -> list[str]:
     prompt = PROMPT_TEMPLATE.format(query=nl_text)
     logger.info(f"Sending prompt to LLM: '{nl_text}'")
     try:
-        response = client.completions.create(model="gpt-4o-mini",
-        prompt=prompt,
-        max_tokens=150,
-        temperature=0,
-        stop=["\n"])
+        response = client.completions.create(model=model,
+            prompt=prompt,
+            max_tokens=150,
+            temperature=0,
+            stop=["\n"])
+        logger.debug(f"LLM response: {response.choices[0].text.strip()}")
         commands = json.loads(response.choices[0].text.strip())
         logger.info(f"LLM generated commands: {commands}")
         return commands
@@ -129,7 +136,7 @@ def generate_commit_message(diff: str) -> str:
 
     prompt = CONVENTIONAL_COMMIT_PROMPT.format(diff=diff)
     try:
-        response = client.completions.create(model="gpt-4o-mini",
+        response = client.completions.create(model=model,
         prompt=prompt,
         max_tokens=100,  # Increased for more detailed messages
         temperature=0.3,
@@ -230,7 +237,6 @@ def main(nl_command, verbose):
         click.echo(msg)
         return
 
-    # Pre-generate commit message for better user feedback if auto-commit is in the commands
     pre_generated_message = None
     if "__auto_commit__" in commands:
         logger.info("Auto-commit detected, pre-generating commit message for user preview")

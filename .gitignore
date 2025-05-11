@@ -174,3 +174,4 @@ cython_debug/
 .pypirc
 
 .egg-info/
+**/.claude/settings.local.json
