@@ -1,8 +1,0 @@
-pyproject.toml
-wrapper.py
-git_ai.egg-info/PKG-INFO
-git_ai.egg-info/SOURCES.txt
-git_ai.egg-info/dependency_links.txt
-git_ai.egg-info/entry_points.txt
-git_ai.egg-info/requires.txt
-git_ai.egg-info/top_level.txt
